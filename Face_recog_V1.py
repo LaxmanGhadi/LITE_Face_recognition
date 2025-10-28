@@ -1,0 +1,164 @@
+from numpy import dot
+from numpy.linalg import norm
+import numpy as np 
+import tensorflow as tf 
+import cv2 
+import os 
+path = 'facenet80M.tflite'
+interpreter = tf.lite.Interpreter(model_path=path)
+interpreter.allocate_tensors()
+input_details  = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
+
+def detect_face(frame):
+  face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_alt.xml")
+  faces = face_cascade.detectMultiScale(frame,1.05,5)
+  if len(faces) > 0:
+    x,y,h,w  = faces[0]
+    # cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,255),2)
+    return frame[x:x+w,y:y+h]
+  else :
+    return None
+
+
+# checking every person in the dir
+
+
+
+# def preprocess(face_img , size=(160,160)):
+#     if face_img is None:
+#         print("⚠️ preprocess() received None image.")
+#         return None
+
+#     if face_img.size == 0:
+#         print("⚠️ preprocess() received empty image.")
+#         return None
+#     img= cv2.resize(face_img,size)
+#     img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+#     img = img.astype(np.float32)
+#     img = img/255.0
+#     img  = np.expand_dims(img,axis=0)
+#     return img
+
+# def get_embed(face_img):
+#   preprocessed_img = preprocess(face_img)
+#   interpreter.set_tensor(input_details[0]['index'], preprocessed_img)
+#   interpreter.invoke()
+#   emb = interpreter.get_tensor(output_details[0]['index'])
+# #   Optionally L2‐normalize
+#   emb = emb / np.linalg.norm(emb, axis=1, keepdims=True)
+#   return emb[0]
+
+
+def preprocess(face_img, size=(160, 160)):
+    if face_img is None:
+        print("⚠️ preprocess() received None image.")
+        return None
+
+    if not isinstance(face_img, np.ndarray):
+        print("⚠️ preprocess() received non-array input:", type(face_img))
+        return None
+
+    if face_img.size == 0:
+        print("⚠️ preprocess() received empty image.")
+        return None
+
+    img = cv2.resize(face_img, size)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = img.astype(np.float32)
+    img = img / 255.0
+    img = np.expand_dims(img, axis=0)
+
+    # print(f"✅ preprocess() output shape: {img.shape}, dtype: {img.dtype}")
+    return img
+
+
+def get_embed(face_img):
+    preprocessed_img = preprocess(face_img)
+    if preprocessed_img is None:
+        print("❌ Skipping embedding due to invalid preprocessing result.")
+        return None
+
+    # Check model input expectations
+    expected_dtype = input_details[0]['dtype']
+    # expected_shape = input_details[0]['shape']
+
+    # print(f"Model expects: shape={expected_shape}, dtype={expected_dtype}")
+    # print(f"Received: shape={preprocessed_img.shape}, dtype={preprocessed_img.dtype}")
+
+    # Ensure dtype and shape match
+    preprocessed_img = preprocessed_img.astype(expected_dtype)
+
+    interpreter.set_tensor(input_details[0]['index'], preprocessed_img)
+    interpreter.invoke()
+    emb = interpreter.get_tensor(output_details[0]['index'])
+
+    # Normalize safely
+    if np.linalg.norm(emb) == 0:
+        print("⚠️ Zero norm embedding, skipping normalization.")
+        return emb[0]
+
+    emb = emb / np.linalg.norm(emb, axis=1, keepdims=True)
+    return emb[0]
+
+
+def cos_similarity(embed1, embed2):
+  return dot(embed1, embed2)/(norm(embed1)*norm(embed2))
+
+def check_person(live_frame):
+  persons_dir = 'SiameseDataset/Original Images/Original Images'
+  persons_list=os.listdir(persons_dir)
+#   cv2.imread(live_frame)
+  live_embed  = get_embed(live_frame)
+  H_score = 0
+  Name = ''
+  for person in persons_list:
+    person_pics = os.listdir(os.path.join(persons_dir,person))
+    sim_score = []
+    # check every pic 
+    # for person_pic in person_pics:
+    #   cv2.imread(os.path.join(os.path.join(persons_dir,person),person_pic))
+    for i in range(3):
+      local_face = detect_face(cv2.imread(os.path.join(os.path.join(persons_dir,person),person_pics[i])))
+      if local_face is not None:
+        pic_embed = get_embed(local_face)
+        if pic_embed is not None and live_embed is not None:
+            sim_score.append(cos_similarity(live_embed, pic_embed))
+    if np.average(sim_score) > H_score:
+      H_score = np.average(sim_score)
+      Name = person
+  return H_score ,Name
+
+
+
+
+
+# -----------------------------LIVE-----------------------------------------
+cap = cv2.VideoCapture(0)
+while True:
+  ret, frame = cap.read()
+  if ret==False:
+    continue
+  else:
+    face = detect_face(frame)
+    if face is None:
+      print("no face in the frame")
+    else:
+        cv2.imshow("frame",face)
+        if cv2.waitKey(1) & 0xFF == ord('a'):
+          person,Name = check_person(face)
+          print(person,Name)
+          break
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        print("👋 Quitting stream...")
+        break
+cap.release()
+cv2.destroyAllWindows()
+
+       
+
+
+
+
