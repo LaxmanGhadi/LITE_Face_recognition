@@ -61,7 +61,7 @@ def get_embed(face_img):
     return emb[0]
 
 def create_embedding_database():
-  persons_dir = 'SiameseDataset/Original Images/Original Images'
+  persons_dir = 'People/Faces/'
   persons_list=os.listdir(persons_dir)
   databse = {}
   for person in persons_list:
@@ -70,7 +70,7 @@ def create_embedding_database():
     # check every pic 
     # for person_pic in person_pics:
     #   cv2.imread(os.path.join(os.path.join(persons_dir,person),person_pic))
-    for i in range(6):
+    for i in range(min(6,len(persons_list)):
       local_face = detect_face(cv2.imread(os.path.join(os.path.join(persons_dir,person),person_pics[i])))
       if local_face is not None:
         pic_embed = get_embed(local_face)
@@ -89,6 +89,7 @@ create_embedding_database()
 
 
        
+
 
 
 
