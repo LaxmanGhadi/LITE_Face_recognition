@@ -17,7 +17,7 @@ interpreter.allocate_tensors()
 input_details  = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 
-
+os.makedir('People/Faces/', exist_ok = True)
 def detect_face(frame):
   face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_alt.xml")
   faces = face_cascade.detectMultiScale(frame,1.05,5)
@@ -89,7 +89,7 @@ while True:
        if len(name) == 0:
             name = input("Enter the name of this person")
        if len(name)>0:
-          save_path = os.path.join('SiameseDataset\Original Images\Original Images',name)
+          save_path = os.path.join('People/Faces/',name)
           os.makedirs(save_path, exist_ok=True)
           
           if cv2.waitKey(1) & 0xFF == ord('a'):
@@ -126,6 +126,7 @@ person_database = {}
 # database = {**global_dict, **person_database}
 # np.savez("Face_embedding.npz", **database)
 print(f"{name}'s  Images have been added")
+
 
 
 
