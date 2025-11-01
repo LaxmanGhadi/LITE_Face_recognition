@@ -11,7 +11,7 @@ import os
 import time
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_TFLITE_DISABLE_XNNPACK"] = "1"
-path = 'facenet80M.tflite'
+path = 'facenet_512.tflite'
 interpreter = tf.lite.Interpreter(model_path=path)
 interpreter.allocate_tensors()
 input_details  = interpreter.get_input_details()
@@ -110,22 +110,23 @@ cv2.destroyAllWindows()
 name = save_path.split("\\")[-1]
 embeddings = []
 person_database = {}
-for img_name in os.listdir(save_path):
+# for img_name in os.listdir(save_path):
 
-    local_face = detect_face( cv2.imread(os.path.join(save_path,img_name)))
-    if local_face is not None:
-        pic_embed = get_embed(local_face)
-        if pic_embed is not None and pic_embed.shape == (512,):
-            embeddings.append(pic_embed)
-    if len(embeddings) >0 :
-       person_database[name] = np.array(embeddings)
+#     local_face = detect_face( cv2.imread(os.path.join(save_path,img_name)))
+#     if local_face is not None:
+#         pic_embed = get_embed(local_face)
+#         if pic_embed is not None and pic_embed.shape == (512,):
+#             embeddings.append(pic_embed)
+#     if len(embeddings) >0 :
+#        person_database[name] = np.array(embeddings)
 
-global_database = np.load("Face_embedding.npz")
-global_dict = {key: global_database[key] for key in global_database.files}
-global_database.close()
-database = {**global_dict, **person_database}
-np.savez("Face_embedding.npz", **database)
-print(f"{name}'s  encoding has been added")
+# global_database = np.load("Face_embedding.npz")
+# global_dict = {key: global_database[key] for key in global_database.files}
+# global_database.close()
+# database = {**global_dict, **person_database}
+# np.savez("Face_embedding.npz", **database)
+print(f"{name}'s  Images have been added")
+
 
 
 
