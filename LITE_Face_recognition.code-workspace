@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"name": "Face_recog_v3.20",
+			"path": "E:/Face_recog_v3.20"
+		},
+		{
+			"name": "LITE_Face_recognition",
+			"path": "."
+		},
+		{
+			"name": "Face_recog_v3.1",
+			"path": "../../../../Downloads/Face_recog_v3.1"
+		}
+	],
+	"settings": {}
+}
